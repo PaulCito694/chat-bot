@@ -1,4 +1,4 @@
-import { create, Client, ConfigObject } from '@open-wa/wa-automate';
+import { create, Client, ConfigObject, ev } from '@open-wa/wa-automate';
 import { Server } from 'socket.io';
 import { getChatCompletion } from './ai.js';
 
@@ -12,24 +12,40 @@ export async function startWhatsApp(io: Server) {
   try {
     const config: ConfigObject = {
       sessionId: "SALES_CHATBOT",
-      authTimeout: 60,
+      authTimeout: 0,
+      qrTimeout: 0,
       blockCrashLogs: true,
       disableSpins: true,
       headless: true,
       hostNotificationLang: 'es' as any,
-      logConsole: false,
-      popup: false,
-      qrTimeout: 0,
+      logConsole: true,
+      useChrome: true,
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+      chromiumArgs: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+      ],
     };
 
-    // Use any to bypass type checking for the second argument if it's not in the type definition but supported by the library
-    const client: Client = await (create as any)(config, (base64Qr: string) => {
-        io.emit('qr', base64Qr);
+    console.log('Initializing WhatsApp client with config:', JSON.stringify(config, null, 2));
+
+    ev.on('qr.**', (qr, sessionId) => {
+        if (sessionId === config.sessionId) {
+            console.log('QR Code generated');
+            io.emit('qr', qr);
+        }
     });
 
-    waClient = client;
+    ev.on('status.**', (status, sessionId) => {
+        if (sessionId === config.sessionId) {
+            console.log('WhatsApp status change:', status);
+            io.emit('status', status);
+        }
+    });
 
-    io.emit('status', 'connected');
+    const client: Client = await create(config);
+
+    waClient = client;
 
     client.onMessage(async (message: any) => {
       // Emit new message to frontend
