@@ -46,6 +46,18 @@ sudo apt-get install -y libgbm-dev wget gnupg ca-certificates procps libxss1 lib
    sudo npm install -g pm2
    pm2 start dist/index.js --name "whatsapp-backend"
    ```
+Primer build:
+ * npm run build
+ * sudo mkdir -p /var/www/chatbot
+ * sudo cp -r dist/* /var/www/chatbot/
+ * sudo chown -R www-data:www-data /var/www/chatbot
+ * sudo chmod -R 755 /var/www/chatbot
+
+Para recompilar:
+ * npm run build
+ * sudo cp -r dist/* /var/www/chatbot/
+
+Reiniciar s: sudo nginx -t && sudo systemctl reload nginx
 
 ## 4. Configuración del Frontend
 
@@ -91,7 +103,7 @@ server {
 
     # Frontend (Archivos estáticos)
     location / {
-        root /ruta/al/proyecto/frontend/dist;
+        root /var/www/chatbot;
         index index.html;
         try_files $uri $uri/ /index.html;
     }
