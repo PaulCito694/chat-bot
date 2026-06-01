@@ -60,8 +60,9 @@ sudo apt-get install -y libgbm-dev wget gnupg ca-certificates procps libxss1 lib
 3. Configura la URL de la API:
    ```bash
    cp .env.example .env
-   # Edita .env y pon la IP de tu VPS o tu dominio
-   # Ejemplo: VITE_API_URL=http://tu-vps-ip:8002
+   # Edita .env y pon la IP de tu VPS o tu dominio.
+   # NOTA: Si usas Nginx como proxy (Paso 5), NO incluyas el puerto 8002.
+   # Ejemplo: VITE_API_URL=http://tu-vps-ip
    nano .env
    ```
 4. Compila el frontend:
@@ -132,5 +133,5 @@ server {
 
 ## 6. Consideraciones Finales
 
-- **Puertos:** Asegúrate de que el puerto 80 (HTTP) y opcionalmente el 8002 (si no usas Nginx para todo) estén abiertos en el firewall de tu VPS.
+- **Puertos:** Asegúrate de que el puerto 80 (HTTP) esté abierto en el firewall de tu VPS. El puerto 8002 no necesita ser público si Nginx está haciendo de proxy localmente.
 - **Sesión de WhatsApp:** La primera vez que inicies el backend, deberás abrir el frontend en tu navegador para escanear el código QR que aparecerá.
