@@ -8,42 +8,40 @@ import ChatWindow from './components/ChatWindow';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
 
+interface Chat {
+  id: string;
+  name: string;
+  lastMessage?: {
+    body: string;
+  };
+}
+
+interface Message {
+  id: string;
+  body: string;
+  fromMe: boolean;
+  timestamp: number;
+  from: string;
+  to: string;
+}
+
 function App() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [status, setStatus] = useState('loading');
   const [qrCode, setQrCode] = useState<string | null>(null);
-  const [chats, setChats] = useState<any[]>([]);
+  const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
     const newSocket = io(API_URL);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSocket(newSocket);
-
-    newSocket.on('status', (newStatus) => {
-      setStatus(newStatus);
-      if (newStatus === 'connected') {
-        fetchChats();
-      }
-    });
-
-    newSocket.on('qr', (qr) => {
-      setQrCode(qr);
-      setStatus('waiting_qr');
-    });
-
-    newSocket.on('new_message', (message) => {
-        // Refresh chats or update current message list
-        if (selectedChatId === message.from || selectedChatId === message.to) {
-            setMessages(prev => [...prev, message]);
-        }
-        fetchChats();
-    });
 
     return () => {
       newSocket.close();
     };
-  }, [selectedChatId]);
+  }, []);
 
   const fetchChats = async () => {
     try {
@@ -62,6 +60,36 @@ function App() {
       console.error('Error fetching messages:', error);
     }
   };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('status', (newStatus) => {
+      setStatus(newStatus);
+      if (newStatus === 'connected') {
+        fetchChats();
+      }
+    });
+
+    socket.on('qr', (qr) => {
+      setQrCode(qr);
+      setStatus('waiting_qr');
+    });
+
+    socket.on('new_message', (message) => {
+        // Refresh chats or update current message list
+        if (selectedChatId === message.from || selectedChatId === message.to) {
+            setMessages(prev => [...prev, message]);
+        }
+        fetchChats();
+    });
+
+    return () => {
+      socket.off('status');
+      socket.off('qr');
+      socket.off('new_message');
+    };
+  }, [socket, selectedChatId]);
 
   const handleSelectChat = (chatId: string) => {
     setSelectedChatId(chatId);

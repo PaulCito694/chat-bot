@@ -82,12 +82,15 @@ Para servir el frontend y hacer proxy al backend:
    ```bash
    sudo nano /etc/nginx/sites-available/chatbot
    ```
-3. Pega el siguiente contenido (ajusta `server_name` y las rutas):
+3. Pega el siguiente contenido, asegurándote de reemplazar los valores marcados:
+
+- `tu-dominio-o-ip.com`: Pon tu IP (ej: `187.33.147.246`) o usa `_` si no tienes dominio.
+- `/ruta/al/proyecto`: Ruta absoluta donde clonaste el repo (ej: `/home/ubuntu/whatsapp-chatbot`).
 
 ```nginx
 server {
     listen 80;
-    server_name tu-dominio-o-ip.com;
+    server_name _; # O tu dominio si lo tienes
 
     # Frontend (Archivos estáticos)
     location / {
@@ -105,20 +108,24 @@ server {
         proxy_set_header Host $host;
     }
 
-    location /chats {
-        proxy_pass http://localhost:8002/chats;
+    # Proxy para todas las rutas que comiencen con /chats o /health
+    location ~ ^/(chats|health) {
+        proxy_pass http://localhost:8002;
         proxy_set_header Host $host;
-    }
-
-    location /health {
-        proxy_pass http://localhost:8002/health;
+        proxy_set_header X-Real-IP $remote_addr;
     }
 }
 ```
 
-4. Habilita el sitio y reinicia Nginx:
+4. Habilita el sitio, deshabilita el default y reinicia Nginx:
    ```bash
+   # Eliminar la configuración por defecto de Nginx para evitar conflictos
+   sudo rm /etc/nginx/sites-enabled/default
+
+   # Habilitar la nueva configuración
    sudo ln -s /etc/nginx/sites-available/chatbot /etc/nginx/sites-enabled/
+
+   # Verificar y reiniciar
    sudo nginx -t
    sudo systemctl restart nginx
    ```
